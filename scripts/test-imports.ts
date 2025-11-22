@@ -1,7 +1,3 @@
-/**
- * Test script to verify imports are working correctly
- */
-
 import { env } from '../config/env';
 import { OAUTH_ENDPOINTS } from '../config/constants';
 

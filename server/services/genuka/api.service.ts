@@ -1,8 +1,3 @@
-/**
- * Genuka API Service
- * Helper service for interacting with Genuka API
- */
-
 import { env } from "~~/config/env";
 import { GenukaCompanyInfo } from "~~/types/company";
 

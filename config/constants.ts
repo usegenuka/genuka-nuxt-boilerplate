@@ -12,10 +12,6 @@ export const API_ENDPOINTS = {
   WEBHOOK: "/api/auth/webhook",
 } as const;
 
-export const DEFAULT_REDIRECTS = {
-  SUCCESS: "/dashboard",
-  ERROR: "/error",
-} as const;
 
 export const TOKEN_GRANT_TYPES = {
   AUTHORIZATION_CODE: "authorization_code",

@@ -1,18 +1,5 @@
-/**
- * Webhook Endpoint
- * Receives and processes webhook events from Genuka
- *
- * Expected payload:
- * {
- *   type: string,        // Event type (e.g., 'company.updated', 'order.created')
- *   data: any,           // Event data
- *   timestamp: string,   // Event timestamp
- *   company_id: string   // Company ID
- * }
- */
-
 import { WEBHOOK_EVENTS } from '~~/config/constants';
-import { WebhookEvent } from '~~/types/company';
+import type { WebhookEvent } from '~~/types/company';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -28,7 +15,6 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Log webhook event (without sensitive data)
     console.log('Webhook received:', {
       type: body.type,
       companyId: body.company_id,
@@ -36,9 +22,7 @@ export default defineEventHandler(async (event) => {
     });
 
     // TODO: Verify webhook signature to ensure it's from Genuka
-    // This should check the X-Genuka-Signature header
-
-    // Process webhook based on event type
+    
     await processWebhook(body);
 
     // Return success response
@@ -65,50 +49,6 @@ export default defineEventHandler(async (event) => {
  * Process webhook based on event type
  */
 async function processWebhook(event: WebhookEvent): Promise<void> {
-  const { CompanyService } = await import('~~/server/services/database/company.service');
-  const companyService = new CompanyService();
-
-  switch (event.type) {
-    case WEBHOOK_EVENTS.COMPANY_UPDATED:
-      // Update company information
-      console.log('Processing company update:', event.company_id);
-      // TODO: Fetch latest company data and update database
-      // await companyService.update(event.company_id, event.data);
-      break;
-
-    case WEBHOOK_EVENTS.COMPANY_DELETED:
-      // Handle company deletion
-      console.log('Processing company deletion:', event.company_id);
-      // TODO: Delete or archive company
-      // await companyService.delete(event.company_id);
-      break;
-
-    case WEBHOOK_EVENTS.ORDER_CREATED:
-      // Handle new order
-      console.log('Processing new order:', event.data);
-      // TODO: Implement order processing logic
-      break;
-
-    case WEBHOOK_EVENTS.ORDER_UPDATED:
-      // Handle order update
-      console.log('Processing order update:', event.data);
-      // TODO: Implement order update logic
-      break;
-
-    case WEBHOOK_EVENTS.PRODUCT_CREATED:
-      // Handle new product
-      console.log('Processing new product:', event.data);
-      // TODO: Implement product creation logic
-      break;
-
-    case WEBHOOK_EVENTS.PRODUCT_UPDATED:
-      // Handle product update
-      console.log('Processing product update:', event.data);
-      // TODO: Implement product update logic
-      break;
-
-    default:
-      console.warn('Unknown webhook event type:', event.type);
-      // Don't throw error for unknown events, just log them
-  }
+  // const { CompanyService } = await import('~~/server/services/database/company.service');
+  // Implement this
 }

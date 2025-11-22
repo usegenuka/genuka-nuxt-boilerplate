@@ -1,8 +1,3 @@
-/**
- * Centralized environment configuration
- * All environment variables are validated and typed here
- */
-
 export const env = {
   genuka: {
     url: process.env.GENUKA_URL || "https://api.genuka.com",
@@ -24,10 +19,6 @@ export const env = {
   },
 } as const;
 
-/**
- * Validate required environment variables
- * Throws error if any required variable is missing
- */
 export function validateEnv(): void {
   const required = {
     GENUKA_CLIENT_ID: env.genuka.clientId,

@@ -1,32 +1,18 @@
-/**
- * OAuth Callback Endpoint
- * Handles the OAuth authorization callback from Genuka
- *
- * Query Parameters:
- * - code: Authorization code from Genuka
- * - company_id: Genuka company ID
- * - timestamp: Request timestamp
- * - hmac: Request signature for validation
- * - redirect_to: Optional redirect URL after success
- */
-
-import { DEFAULT_REDIRECTS } from "~~/config/constants";
 import { OAuthService } from "~~/server/services/auth/oauth.service";
-import { OAuthCallbackParams } from "~~/types/company";
+import type { OAuthCallbackParams } from "~~/types/company";
 
 export default defineEventHandler(async (event) => {
   try {
-    // Get query parameters
     const query = getQuery(event);
     const { code, company_id, timestamp, hmac, redirect_to } = query;
 
     // Validate required parameters
-    if (!code || !company_id || !timestamp || !hmac) {
+    if (!code || !company_id || !timestamp || !hmac || !redirect_to) {
       throw createError({
         statusCode: 400,
         statusMessage: "Bad Request",
         message:
-          "Missing required parameters: code, company_id, timestamp, and hmac are required",
+          "Missing required parameters: code, company_id, timestamp, hmac, and redirect_to are required",
       });
     }
 
