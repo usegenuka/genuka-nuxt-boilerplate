@@ -24,7 +24,7 @@ export class OAuthService {
     const companyInfo = await getCompanyInfo(company_id);
 
     // Store/update company in database
-    const companyService = new (await import('../database/company.service')).CompanyService();
+    const companyService = new (await import('~~/server/services/database/company.service')).CompanyService();
     await companyService.upsert({
       id: company_id,
       handle: companyInfo.handle || null,
