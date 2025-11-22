@@ -43,8 +43,6 @@ export default defineEventHandler(async (event) => {
     const oauthService = new OAuthService();
     await oauthService.handleCallback(params);
 
-    // Log success (without sensitive data)
-
     // Decode and prepare redirect URL
     const redirectUrl = decodeURIComponent(params.redirect_to);
 
@@ -55,7 +53,6 @@ export default defineEventHandler(async (event) => {
     });
     return sendRedirect(event, redirectUrl, 302);
   } catch (error: any) {
-    // Log error (without sensitive data)
     console.error("OAuth callback error:", {
       message: error.message,
       statusCode: error.statusCode,
