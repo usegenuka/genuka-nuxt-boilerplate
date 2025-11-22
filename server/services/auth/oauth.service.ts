@@ -3,9 +3,8 @@
  * Handles OAuth flow, token exchange, and company synchronization
  */
 
-import type { OAuthCallbackParams, TokenResponse, GenukaCompanyInfo } from '../../../types/company';
-import { env } from '../../../config/env';
-import { OAUTH_ENDPOINTS, TOKEN_GRANT_TYPES } from '../../../config/constants';
+import type { OAuthCallbackParams, GenukaCompanyInfo } from '~~/types/company';
+import { exchangeCodeForToken, getCompanyInfo } from '~~/server/utils/genuka';
 
 export class OAuthService {
   /**
@@ -19,10 +18,10 @@ export class OAuthService {
     this.validateHmac(params);
 
     // Exchange authorization code for access token
-    const accessToken = await this.exchangeCodeForToken(code);
+    const accessToken = await exchangeCodeForToken(code);
 
     // Fetch company information from Genuka
-    const companyInfo = await this.fetchCompanyInfo(company_id, accessToken);
+    const companyInfo = await getCompanyInfo(company_id);
 
     // Store/update company in database
     const companyService = new (await import('../database/company.service')).CompanyService();
@@ -36,70 +35,6 @@ export class OAuthService {
       authorizationCode: code,
       phone: companyInfo.metadata?.contact || null,
     });
-  }
-
-  /**
-   * Exchange authorization code for access token
-   */
-  private async exchangeCodeForToken(code: string): Promise<string> {
-    const tokenUrl = `${env.genuka.url}${OAUTH_ENDPOINTS.TOKEN}`;
-
-    const body = new URLSearchParams({
-      grant_type: TOKEN_GRANT_TYPES.AUTHORIZATION_CODE,
-      code: code,
-      client_id: env.genuka.clientId,
-      client_secret: env.genuka.clientSecret,
-      redirect_uri: env.genuka.redirectUri,
-    });
-
-    try {
-      const response = await fetch(tokenUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: body.toString(),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Token exchange failed: ${response.status} - ${errorText}`);
-      }
-
-      const data: TokenResponse = await response.json();
-      return data.access_token;
-    } catch (error) {
-      console.error('Token exchange error:', error);
-      throw new Error('Failed to exchange authorization code for access token');
-    }
-  }
-
-  /**
-   * Fetch company information from Genuka API
-   */
-  private async fetchCompanyInfo(companyId: string, accessToken: string): Promise<GenukaCompanyInfo> {
-    // TODO: Replace with actual Genuka SDK once available
-    // For now, we'll use a direct API call
-    const companyUrl = `${env.genuka.url}/api/companies/${companyId}`;
-
-    try {
-      const response = await fetch(companyUrl, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch company info: ${response.status}`);
-      }
-
-      const data: GenukaCompanyInfo = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Fetch company info error:', error);
-      throw new Error('Failed to fetch company information');
-    }
   }
 
   /**
@@ -126,37 +61,4 @@ export class OAuthService {
     // }
   }
 
-  /**
-   * Refresh access token using refresh token
-   */
-  async refreshToken(refreshToken: string): Promise<string> {
-    const tokenUrl = `${env.genuka.url}${OAUTH_ENDPOINTS.TOKEN}`;
-
-    const body = new URLSearchParams({
-      grant_type: TOKEN_GRANT_TYPES.REFRESH_TOKEN,
-      refresh_token: refreshToken,
-      client_id: env.genuka.clientId,
-      client_secret: env.genuka.clientSecret,
-    });
-
-    try {
-      const response = await fetch(tokenUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: body.toString(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Token refresh failed: ${response.status}`);
-      }
-
-      const data: TokenResponse = await response.json();
-      return data.access_token;
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      throw new Error('Failed to refresh access token');
-    }
-  }
 }
