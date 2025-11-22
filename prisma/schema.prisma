@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Company {
+  id                String    @id @db.VarChar(255)
+  handle            String?   @unique @db.VarChar(255)
+  name              String    @db.VarChar(255)
+  description       String?   @db.Text
+  logoUrl           String?   @map("logo_url") @db.VarChar(500)
+  accessToken       String?   @map("access_token") @db.Text
+  authorizationCode String?   @map("authorization_code") @db.VarChar(255)
+  phone             String?   @db.VarChar(50)
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([handle])
+  @@index([id])
+  @@map("companies")
+}
