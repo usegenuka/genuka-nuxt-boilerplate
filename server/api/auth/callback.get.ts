@@ -1,5 +1,6 @@
 import { OAuthService } from "~~/server/services/auth/oauth.service";
 import type { OAuthCallbackParams } from "~~/types/company";
+import { createSession } from "~~/server/utils/session";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -28,6 +29,9 @@ export default defineEventHandler(async (event) => {
     // Process OAuth callback
     const oauthService = new OAuthService();
     await oauthService.handleCallback(params);
+
+    // Create session for the company
+    await createSession(event, params.company_id);
 
     // Decode and prepare redirect URL
     const redirectUrl = decodeURIComponent(params.redirect_to);

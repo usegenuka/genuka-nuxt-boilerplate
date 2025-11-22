@@ -1,44 +1,29 @@
-/**
- * Genuka Composable
- * Frontend composable for accessing Genuka functionality
- */
+import type { Company } from '~~/types/company';
 
-import type { Company } from '~/types/company';
+interface CurrentCompanyResponse {
+  success: boolean;
+  company: Company | null;
+  authenticated: boolean;
+  message?: string;
+}
 
 export const useGenuka = () => {
   /**
-   * Get all companies
+   * Get current authenticated company
    */
-  const getCompanies = async (): Promise<Company[]> => {
+  const getCurrentCompany = async (): Promise<Company | null> => {
     try {
-      const { data, error } = await useFetch<Company[]>('/api/companies');
+      const { data, error } = await useFetch<CurrentCompanyResponse>('/api/company/current');
 
       if (error.value) {
-        throw new Error(error.value.message || 'Failed to fetch companies');
+        console.error('Failed to fetch current company:', error.value);
+        return null;
       }
 
-      return data.value || [];
+      return data.value?.company || null;
     } catch (err: any) {
-      console.error('Get companies error:', err);
-      throw err;
-    }
-  };
-
-  /**
-   * Get company by ID
-   */
-  const getCompany = async (companyId: string): Promise<Company | null> => {
-    try {
-      const { data, error } = await useFetch<Company>(`/api/companies/${companyId}`);
-
-      if (error.value) {
-        throw new Error(error.value.message || 'Failed to fetch company');
-      }
-
-      return data.value;
-    } catch (err: any) {
-      console.error('Get company error:', err);
-      throw err;
+      console.error('Get current company error:', err);
+      return null;
     }
   };
 
@@ -72,9 +57,9 @@ export const useGenuka = () => {
   /**
    * Check if company is connected (has access token)
    */
-  const isCompanyConnected = async (companyId: string): Promise<boolean> => {
+  const isCompanyConnected = async (): Promise<boolean> => {
     try {
-      const company = await getCompany(companyId);
+      const company = await getCurrentCompany();
       return !!company?.accessToken;
     } catch (err) {
       return false;
@@ -82,8 +67,7 @@ export const useGenuka = () => {
   };
 
   return {
-    getCompanies,
-    getCompany,
+    getCurrentCompany,
     initiateOAuth,
     isCompanyConnected,
   };
