@@ -11,11 +11,11 @@ export const env = {
     redirectUri: process.env.GENUKA_REDIRECT_URI,
   },
   database: {
-    host: process.env.DATABASE_HOST,
-    port: parseInt(process.env.DATABASE_PORT || "3306"),
-    user: process.env.DATABASE_USER,
-    password: process.env.DATABASE_PASSWORD,
-    name: process.env.DATABASE_NAME,
+    host: process.env.DB_HOST || "localhost",
+    port: parseInt(process.env.DB_PORT || "3306"),
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD,
+    name: process.env.DB_NAME,
     url: process.env.DATABASE_URL,
   },
   app: {
@@ -33,11 +33,11 @@ export function validateEnv(): void {
     GENUKA_CLIENT_ID: env.genuka.clientId,
     GENUKA_CLIENT_SECRET: env.genuka.clientSecret,
     GENUKA_REDIRECT_URI: env.genuka.redirectUri,
-    DATABASE_HOST: env.database.host,
-    DATABASE_PORT: env.database.port,
-    DATABASE_USER: env.database.user,
-    DATABASE_PASSWORD: env.database.password,
-    DATABASE_NAME: env.database.name,
+    DB_HOST: env.database.host,
+    DB_PORT: env.database.port,
+    DB_USER: env.database.user,
+    DB_PASSWORD: env.database.password,
+    DB_NAME: env.database.name,
     DATABASE_URL: env.database.url,
   };
 

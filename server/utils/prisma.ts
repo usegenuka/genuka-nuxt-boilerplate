@@ -1,18 +1,24 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { DB_DEFAULTS } from "~~/config/constants";
 import { env } from "~~/config/env";
 import { PrismaClient } from "~~/prisma/generated/client";
 
 const prismaClientSingleton = () => {
+  // Create MariaDB adapter with connection configuration
   const adapter = new PrismaMariaDb({
     host: env.database.host,
     port: env.database.port,
     user: env.database.user,
     password: env.database.password,
     database: env.database.name,
-    connectionLimit: DB_DEFAULTS.CONNECTION_LIMIT,
+    connectionLimit: 10,
+    acquireTimeout: 30000,
+    connectTimeout: 10000,
   });
-  return new PrismaClient({ adapter });
+
+  return new PrismaClient({
+    adapter,
+    log: ['error', 'warn'],
+  });
 };
 
 type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;

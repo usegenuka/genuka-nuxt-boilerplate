@@ -24,8 +24,9 @@ export default defineEventHandler(async (event) => {
     if (!code || !company_id || !timestamp || !hmac) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Bad Request',
-        message: 'Missing required parameters: code, company_id, timestamp, and hmac are required',
+        statusMessage: "Bad Request",
+        message:
+          "Missing required parameters: code, company_id, timestamp, and hmac are required",
       });
     }
 
@@ -35,7 +36,7 @@ export default defineEventHandler(async (event) => {
       company_id: company_id as string,
       timestamp: timestamp as string,
       hmac: hmac as string,
-      redirect_to: redirect_to as string | undefined,
+      redirect_to: redirect_to as string,
     };
 
     // Process OAuth callback
@@ -43,18 +44,19 @@ export default defineEventHandler(async (event) => {
     await oauthService.handleCallback(params);
 
     // Log success (without sensitive data)
-    console.log('OAuth callback successful:', {
+
+    // Decode and prepare redirect URL
+    const redirectUrl = decodeURIComponent(params.redirect_to);
+
+    console.log("OAuth callback successful:", {
       companyId: company_id,
       timestamp: timestamp,
+      redirectUrl: redirectUrl,
     });
-
-    // Redirect to specified URL or default dashboard
-    const redirectUrl = params.redirect_to || DEFAULT_REDIRECTS.SUCCESS;
     return sendRedirect(event, redirectUrl, 302);
-
   } catch (error: any) {
     // Log error (without sensitive data)
-    console.error('OAuth callback error:', {
+    console.error("OAuth callback error:", {
       message: error.message,
       statusCode: error.statusCode,
     });
@@ -62,8 +64,8 @@ export default defineEventHandler(async (event) => {
     // Return error response
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: 'Internal Server Error',
-      message: error.message || 'An error occurred during OAuth callback',
+      statusMessage: "Internal Server Error",
+      message: error.message || "An error occurred during OAuth callback",
     });
   }
 });

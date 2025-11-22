@@ -41,7 +41,7 @@ export interface OAuthCallbackParams {
   company_id: string;
   timestamp: string;
   hmac: string;
-  redirect_to?: string;
+  redirect_to: string;
 }
 
 export interface TokenResponse {
