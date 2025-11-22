@@ -3,8 +3,8 @@
  * Helper service for interacting with Genuka API
  */
 
-import { env } from '~/config/env';
-import type { GenukaCompanyInfo } from '~/types/company';
+import { env } from "~~/config/env";
+import { GenukaCompanyInfo } from "~~/types/company";
 
 export class GenukaApiService {
   private baseUrl: string;

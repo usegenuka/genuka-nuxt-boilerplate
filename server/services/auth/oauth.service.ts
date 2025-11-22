@@ -3,9 +3,9 @@
  * Handles OAuth flow, token exchange, and company synchronization
  */
 
-import type { OAuthCallbackParams, TokenResponse, GenukaCompanyInfo } from '~/types/company';
-import { env } from '~/config/env';
-import { OAUTH_ENDPOINTS, TOKEN_GRANT_TYPES } from '~/config/constants';
+import type { OAuthCallbackParams, TokenResponse, GenukaCompanyInfo } from '../../../types/company';
+import { env } from '../../../config/env';
+import { OAUTH_ENDPOINTS, TOKEN_GRANT_TYPES } from '../../../config/constants';
 
 export class OAuthService {
   /**

@@ -5,17 +5,22 @@
 
 export const env = {
   genuka: {
-    url: process.env.GENUKA_URL || 'https://api.genuka.com',
-    clientId: process.env.GENUKA_CLIENT_ID || '',
-    clientSecret: process.env.GENUKA_CLIENT_SECRET || '',
-    redirectUri: process.env.GENUKA_REDIRECT_URI || '',
+    url: process.env.GENUKA_URL || "https://api.genuka.com",
+    clientId: process.env.GENUKA_CLIENT_ID,
+    clientSecret: process.env.GENUKA_CLIENT_SECRET,
+    redirectUri: process.env.GENUKA_REDIRECT_URI,
   },
   database: {
-    url: process.env.DATABASE_URL || '',
+    host: process.env.DATABASE_HOST,
+    port: parseInt(process.env.DATABASE_PORT || "3306"),
+    user: process.env.DATABASE_USER,
+    password: process.env.DATABASE_PASSWORD,
+    name: process.env.DATABASE_NAME,
+    url: process.env.DATABASE_URL,
   },
   app: {
-    env: process.env.NODE_ENV || 'development',
-    url: process.env.APP_URL || 'http://localhost:3000',
+    env: process.env.NODE_ENV,
+    url: process.env.APP_URL,
   },
 } as const;
 
@@ -25,10 +30,15 @@ export const env = {
  */
 export function validateEnv(): void {
   const required = {
-    'GENUKA_CLIENT_ID': env.genuka.clientId,
-    'GENUKA_CLIENT_SECRET': env.genuka.clientSecret,
-    'GENUKA_REDIRECT_URI': env.genuka.redirectUri,
-    'DATABASE_URL': env.database.url,
+    GENUKA_CLIENT_ID: env.genuka.clientId,
+    GENUKA_CLIENT_SECRET: env.genuka.clientSecret,
+    GENUKA_REDIRECT_URI: env.genuka.redirectUri,
+    DATABASE_HOST: env.database.host,
+    DATABASE_PORT: env.database.port,
+    DATABASE_USER: env.database.user,
+    DATABASE_PASSWORD: env.database.password,
+    DATABASE_NAME: env.database.name,
+    DATABASE_URL: env.database.url,
   };
 
   const missing = Object.entries(required)
@@ -37,8 +47,8 @@ export function validateEnv(): void {
 
   if (missing.length > 0) {
     throw new Error(
-      `Missing required environment variables: ${missing.join(', ')}\n` +
-      'Please check your .env file.'
+      `Missing required environment variables: ${missing.join(", ")}\n` +
+        "Please check your .env file."
     );
   }
 }

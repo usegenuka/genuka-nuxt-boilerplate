@@ -3,8 +3,7 @@
  * Handles all database operations for companies
  */
 
-import type { Company, CreateCompanyInput, UpdateCompanyInput } from '~/types/company';
-import { prisma } from '~/server/utils/prisma';
+import { Company, CreateCompanyInput, UpdateCompanyInput } from "~~/types/company";
 
 export class CompanyService {
   /**

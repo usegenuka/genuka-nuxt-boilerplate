@@ -2,7 +2,7 @@
  * Get company by ID
  */
 
-import { CompanyService } from '~/server/services/database/company.service';
+import { CompanyService } from '../../services/database/company.service';
 
 export default defineEventHandler(async (event) => {
   try {

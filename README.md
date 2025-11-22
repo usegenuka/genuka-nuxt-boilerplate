@@ -28,7 +28,7 @@ Before you begin, ensure you have the following installed:
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/usegenuka/genuka-nuxt-boilerplate.git
 cd genuka-nuxt-boilerplate
 
 # Install dependencies

@@ -18,15 +18,6 @@ export default defineNuxtConfig({
 
   // TypeScript configuration
   typescript: {
-    strict: true,
-    typeCheck: false,
-  },
-
-  // Configure aliases
-  alias: {
-    '@prisma/client': './prisma/generated/client',
-    '~config': './config',
-    '~types': './types',
-    '~server': './server',
-  },
+    strict: true
+  }
 })

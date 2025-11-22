@@ -11,8 +11,8 @@
  * }
  */
 
-import type { WebhookEvent } from '~/types/company';
-import { WEBHOOK_EVENTS } from '~/config/constants';
+import { WEBHOOK_EVENTS } from '~~/config/constants';
+import { WebhookEvent } from '~~/types/company';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
  * Process webhook based on event type
  */
 async function processWebhook(event: WebhookEvent): Promise<void> {
-  const { CompanyService } = await import('~/server/services/database/company.service');
+  const { CompanyService } = await import('~~/server/services/database/company.service');
   const companyService = new CompanyService();
 
   switch (event.type) {

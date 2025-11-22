@@ -10,9 +10,9 @@
  * - redirect_to: Optional redirect URL after success
  */
 
-import { OAuthService } from '~/server/services/auth/oauth.service';
-import type { OAuthCallbackParams } from '~/types/company';
-import { DEFAULT_REDIRECTS } from '~/config/constants';
+import { DEFAULT_REDIRECTS } from "~~/config/constants";
+import { OAuthService } from "~~/server/services/auth/oauth.service";
+import { OAuthCallbackParams } from "~~/types/company";
 
 export default defineEventHandler(async (event) => {
   try {
