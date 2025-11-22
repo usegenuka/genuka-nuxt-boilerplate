@@ -23,11 +23,11 @@ onMounted(async () => {
 
     <div class="content">
       <div v-if="loading" class="loading">
-        Chargement...
+        Loading...
       </div>
 
       <div v-else-if="company" class="company-info">
-        <h2>Companie Actuelle</h2>
+        <h2>Current Company</h2>
 
         <div class="company-card">
           <div v-if="company.logoUrl" class="company-logo">
@@ -45,9 +45,9 @@ onMounted(async () => {
       </div>
 
       <div v-else class="not-authenticated">
-        <h2>Non authentifié</h2>
-        <p>Aucune companie n'est actuellement connectée.</p>
-        <p>Veuillez vous authentifier via OAuth pour continuer.</p>
+        <h2>Not Authenticated</h2>
+        <p>No company is currently connected.</p>
+        <p>Please authenticate via OAuth to continue.</p>
       </div>
     </div>
   </div>

@@ -1,11 +1,11 @@
-import type { H3Event } from 'h3';
+import type { H3Event } from "h3";
 
 interface SessionData {
   companyId: string;
   createdAt: number;
 }
 
-const SESSION_COOKIE_NAME = 'genuka_session';
+const SESSION_COOKIE_NAME = "genuka_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 jours
 
 /**
@@ -19,10 +19,10 @@ export async function createSession(event: H3Event, companyId: string) {
 
   setCookie(event, SESSION_COOKIE_NAME, JSON.stringify(sessionData), {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
     maxAge: SESSION_MAX_AGE,
-    path: '/',
+    path: "/",
   });
 }
 
@@ -39,7 +39,7 @@ export function getCompanySession(event: H3Event): SessionData | null {
   try {
     return JSON.parse(sessionCookie) as SessionData;
   } catch (error) {
-    console.error('Failed to parse session cookie:', error);
+    console.error("Failed to parse session cookie:", error);
     return null;
   }
 }

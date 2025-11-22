@@ -25,22 +25,13 @@ export default defineEventHandler(async (event) => {
       hmac: hmac as string,
       redirect_to: redirect_to as string,
     };
-
-    // Process OAuth callback
+    
     const oauthService = new OAuthService();
     await oauthService.handleCallback(params);
 
-    // Create session for the company
     await createSession(event, params.company_id);
 
-    // Decode and prepare redirect URL
     const redirectUrl = decodeURIComponent(params.redirect_to);
-
-    console.log("OAuth callback successful:", {
-      companyId: company_id,
-      timestamp: timestamp,
-      redirectUrl: redirectUrl,
-    });
     return sendRedirect(event, redirectUrl, 302);
   } catch (error: any) {
     console.error("OAuth callback error:", {

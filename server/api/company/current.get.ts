@@ -1,4 +1,5 @@
 import { getCurrentCompanyId } from '~~/server/utils/session';
+import { getCompanyInfo } from '~~/server/utils/genuka';
 
 export default defineEventHandler(async (event) => {
   try {
@@ -13,20 +14,8 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Fetch company from database
-    const company = await prisma.company.findUnique({
-      where: { id: companyId },
-      select: {
-        id: true,
-        handle: true,
-        name: true,
-        description: true,
-        logoUrl: true,
-        phone: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    // Fetch company info from Genuka API using SDK
+    const company = await getCompanyInfo(companyId);
 
     if (!company) {
       return {
