@@ -1,7 +1,3 @@
-/**
- * Company type definitions
- */
-
 export interface Company {
   id: string;
   handle: string | null;
@@ -9,6 +5,8 @@ export interface Company {
   description: string | null;
   logoUrl: string | null;
   accessToken: string | null;
+  refreshToken: string | null;
+  tokenExpiresAt: Date | null;
   authorizationCode: string | null;
   phone: string | null;
   createdAt: Date;
@@ -22,6 +20,8 @@ export interface CreateCompanyInput {
   description?: string | null;
   logoUrl?: string | null;
   accessToken?: string | null;
+  refreshToken?: string | null;
+  tokenExpiresAt?: Date | null;
   authorizationCode?: string | null;
   phone?: string | null;
 }
@@ -32,6 +32,8 @@ export interface UpdateCompanyInput {
   description?: string | null;
   logoUrl?: string | null;
   accessToken?: string | null;
+  refreshToken?: string | null;
+  tokenExpiresAt?: Date | null;
   authorizationCode?: string | null;
   phone?: string | null;
 }
@@ -46,9 +48,9 @@ export interface OAuthCallbackParams {
 
 export interface TokenResponse {
   access_token: string;
+  refresh_token: string;
   token_type: string;
-  expires_in: number;
-  refresh_token?: string;
+  expires_in_minutes: number;
 }
 
 export interface GenukaCompanyInfo {

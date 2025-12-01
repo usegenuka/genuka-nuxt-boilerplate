@@ -1,67 +1,165 @@
 import type { H3Event } from "h3";
+import { SignJWT, jwtVerify, type JWTPayload } from "jose";
+import { env } from "~~/config/env";
 
-interface SessionData {
+// Cookie names
+const SESSION_COOKIE_NAME = "session";
+const REFRESH_COOKIE_NAME = "refresh_session";
+
+// Cookie durations
+const SESSION_MAX_AGE = 60 * 60 * 7; // 7 hours in seconds
+const REFRESH_MAX_AGE = 60 * 60 * 24 * 30; // 30 days in seconds
+
+interface SessionPayload extends JWTPayload {
   companyId: string;
-  createdAt: number;
+  type: "session" | "refresh";
 }
 
-const SESSION_COOKIE_NAME = "genuka_session";
-const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 jours
+function getSecret() {
+  return new TextEncoder().encode(env.genuka.clientSecret);
+}
 
 /**
- * Create a session for a company
+ * Create both session and refresh cookies for a company
+ * Double cookie pattern for secure session management
  */
 export async function createSession(event: H3Event, companyId: string) {
-  const sessionData: SessionData = {
-    companyId,
-    createdAt: Date.now(),
-  };
+  const secret = getSecret();
+  const isProd = process.env.NODE_ENV === "production";
 
-  setCookie(event, SESSION_COOKIE_NAME, JSON.stringify(sessionData), {
+  // Create session token (short-lived: 7h)
+  const sessionToken = await new SignJWT({ companyId, type: "session" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("7h")
+    .sign(secret);
+
+  // Create refresh token (long-lived: 30 days)
+  const refreshToken = await new SignJWT({ companyId, type: "refresh" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("30d")
+    .sign(secret);
+
+  // Set session cookie (7h)
+  setCookie(event, SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isProd,
     sameSite: "lax",
     maxAge: SESSION_MAX_AGE,
     path: "/",
   });
+
+  // Set refresh cookie (30 days)
+  setCookie(event, REFRESH_COOKIE_NAME, refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: "lax",
+    maxAge: REFRESH_MAX_AGE,
+    path: "/",
+  });
+
+  return sessionToken;
 }
 
 /**
- * Get session data from cookie
+ * Verify a JWT token and return the payload
  */
-export function getCompanySession(event: H3Event): SessionData | null {
-  const sessionCookie = getCookie(event, SESSION_COOKIE_NAME);
-
-  if (!sessionCookie) {
-    return null;
-  }
-
+async function verifyJwt(token: string): Promise<SessionPayload | null> {
   try {
-    return JSON.parse(sessionCookie) as SessionData;
+    const secret = getSecret();
+    const { payload } = await jwtVerify(token, secret);
+    return payload as SessionPayload;
   } catch (error) {
-    console.error("Failed to parse session cookie:", error);
+    // Don't log expected expiration errors
+    const isExpiredError =
+      error instanceof Error && error.message.includes("expired");
+    if (!isExpiredError) {
+      console.error("JWT verification failed:", error);
+    }
     return null;
   }
+}
+
+/**
+ * Get the session token from cookies
+ */
+function getSessionToken(event: H3Event): string | null {
+  return getCookie(event, SESSION_COOKIE_NAME) || null;
+}
+
+/**
+ * Get the refresh token from cookies
+ */
+function getRefreshTokenFromCookie(event: H3Event): string | null {
+  return getCookie(event, REFRESH_COOKIE_NAME) || null;
+}
+
+/**
+ * Verify refresh token and return companyId
+ * This is used for secure session refresh
+ */
+export async function verifyRefreshToken(event: H3Event): Promise<string | null> {
+  const token = getRefreshTokenFromCookie(event);
+
+  if (!token) {
+    return null;
+  }
+
+  const payload = await verifyJwt(token);
+
+  // Ensure it's a refresh token, not a session token
+  if (!payload || payload.type !== "refresh") {
+    return null;
+  }
+
+  return payload.companyId;
 }
 
 /**
  * Get current company ID from session
  */
-export function getCurrentCompanyId(event: H3Event): string | null {
-  const session = getCompanySession(event);
-  return session?.companyId || null;
+export async function getCurrentCompanyId(event: H3Event): Promise<string | null> {
+  const token = getSessionToken(event);
+
+  if (!token) {
+    return null;
+  }
+
+  const payload = await verifyJwt(token);
+
+  if (!payload || payload.type !== "session") {
+    return null;
+  }
+
+  return payload.companyId;
 }
 
 /**
- * Clear session
+ * Get session data (for backward compatibility)
+ */
+export async function getCompanySession(event: H3Event): Promise<{ companyId: string } | null> {
+  const companyId = await getCurrentCompanyId(event);
+
+  if (!companyId) {
+    return null;
+  }
+
+  return { companyId };
+}
+
+/**
+ * Clear both session and refresh cookies
  */
 export function clearCompanySession(event: H3Event) {
   deleteCookie(event, SESSION_COOKIE_NAME);
+  deleteCookie(event, REFRESH_COOKIE_NAME);
 }
 
 /**
  * Check if user is authenticated
  */
-export function isAuthenticated(event: H3Event): boolean {
-  return getCompanySession(event) !== null;
+export async function isAuthenticated(event: H3Event): Promise<boolean> {
+  const companyId = await getCurrentCompanyId(event);
+  return companyId !== null;
 }

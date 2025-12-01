@@ -3,15 +3,20 @@ import { exchangeCodeForToken, getCompanyInfo } from '~~/server/utils/genuka';
 import { verifyHmac, isTimestampValid } from '~~/server/utils/hmac';
 
 export class OAuthService {
-  
+
   async handleCallback(params: OAuthCallbackParams): Promise<void> {
-    const { code, company_id, timestamp, hmac } = params;
+    const { code, company_id } = params;
 
     await this.validateHmac(params);
 
-    const accessToken = await exchangeCodeForToken(code);
+    const tokenResponse = await exchangeCodeForToken(code);
 
     const companyInfo = await getCompanyInfo(company_id);
+
+    // Calculate token expiration date
+    const tokenExpiresAt = new Date(
+      Date.now() + tokenResponse.expires_in_minutes * 60 * 1000
+    );
 
     const companyService = new (await import('~~/server/services/database/company.service')).CompanyService();
     await companyService.upsert({
@@ -20,7 +25,9 @@ export class OAuthService {
       name: companyInfo.name,
       description: companyInfo.description || null,
       logoUrl: companyInfo.logoUrl || null,
-      accessToken: accessToken,
+      accessToken: tokenResponse.access_token,
+      refreshToken: tokenResponse.refresh_token,
+      tokenExpiresAt: tokenExpiresAt,
       authorizationCode: code,
       phone: companyInfo.metadata?.contact || null,
     });
