@@ -3,8 +3,8 @@ import { getCompanyInfo } from '~~/server/utils/genuka';
 
 export default defineEventHandler(async (event) => {
   try {
-    // Get company ID from session
-    const companyId = getCurrentCompanyId(event);
+    // Get company ID from session (async - verifies JWT)
+    const companyId = await getCurrentCompanyId(event);
 
     if (!companyId) {
       return {

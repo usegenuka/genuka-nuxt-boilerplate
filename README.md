@@ -5,6 +5,8 @@ A production-ready Nuxt 3 boilerplate for integrating with the Genuka e-commerce
 ## 🌟 Features
 
 - ✅ **OAuth 2.0 Integration** - Complete OAuth flow with Genuka
+- ✅ **JWT Session Management** - Secure session handling with jose library
+- ✅ **Double Cookie Security** - Session + refresh cookies for secure token refresh
 - ✅ **Webhook Handling** - Receive and process Genuka events
 - ✅ **Database Integration** - MySQL/MariaDB with Prisma ORM
 - ✅ **TypeScript Support** - Fully typed codebase
@@ -203,6 +205,8 @@ The boilerplate includes a `Company` model with these fields:
 | description | Text | Company description |
 | logoUrl | String | Logo URL |
 | accessToken | Text | OAuth access token |
+| refreshToken | Text | OAuth refresh token for session renewal |
+| tokenExpiresAt | DateTime | Access token expiration date |
 | authorizationCode | String | OAuth authorization code |
 | phone | String | Contact phone |
 | createdAt | DateTime | Created timestamp |
@@ -229,17 +233,21 @@ bunx prisma studio
 
 ## 🛠️ API Endpoints
 
-### OAuth Endpoints
+### Auth Endpoints
 
-**GET** `/api/auth/callback`
-- Handles OAuth callback from Genuka
-- Parameters: `code`, `company_id`, `timestamp`, `hmac`, `redirect_to`
-
-**POST** `/api/auth/webhook`
-- Receives webhook events from Genuka
-- Body: `{ type, data, timestamp, company_id }`
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/auth/callback` | No | OAuth callback handler |
+| POST | `/api/auth/webhook` | No | Webhook event handler |
+| GET | `/api/auth/check` | No | Check if authenticated |
+| POST | `/api/auth/refresh` | No | Refresh expired session |
+| GET | `/api/auth/me` | Yes | Get current company info |
+| POST | `/api/auth/logout` | Yes | Logout and destroy session |
 
 ### Company Endpoints
+
+**GET** `/api/company/current`
+- Returns current authenticated company
 
 **GET** `/api/companies`
 - Returns all companies
@@ -247,53 +255,154 @@ bunx prisma studio
 **GET** `/api/companies/:id`
 - Returns specific company by ID
 
+## 🔒 Authentication
+
+### Double Cookie Security Pattern
+
+This boilerplate uses a secure **double cookie pattern** for session management:
+
+| Cookie | Duration | Purpose |
+|--------|----------|---------|
+| `session` | 7 hours | Access protected routes |
+| `refresh_session` | 30 days | Securely refresh expired sessions |
+
+Both cookies are **HTTP-only** (not accessible via JavaScript) and **signed JWT** (cannot be forged).
+
+### Session Refresh (No Reinstall Required)
+
+When the session expires, the client can securely refresh it:
+
+```
+POST /api/auth/refresh
+// No body required! The refresh_session cookie is sent automatically
+```
+
+**Security Flow:**
+1. Client calls `POST /api/auth/refresh` with no body
+2. Server reads `refresh_session` cookie (HTTP-only, inaccessible to JS)
+3. Server verifies the JWT signature (cannot be forged)
+4. Server extracts `companyId` from the verified JWT
+5. Server retrieves Genuka `refresh_token` from database
+6. Server calls Genuka API with `refresh_token` + `client_secret`
+7. Server updates tokens in database
+8. Server creates new `session` + `refresh_session` cookies
+
+**Why this is secure:**
+- No data sent in request body (nothing to forge)
+- `companyId` comes from a signed JWT cookie (tamper-proof)
+- Cookies are HTTP-only (not accessible via JavaScript/XSS)
+- Genuka `refresh_token` is never exposed to the client
+- Genuka API validates with `client_secret` (server-side only)
+
 ## 💻 Frontend Usage
 
 ### Using the Genuka Composable
 
 ```typescript
 const {
-  getCompanies,
-  getCompany,
-  initiateOAuth,
-  isCompanyConnected
+  // Reactive state
+  company,         // Current company data (or null)
+  isAuthenticated, // Boolean: is user logged in?
+  isLoading,       // Boolean: is an auth operation in progress?
+  error,           // Error message (or null)
+
+  // Methods
+  checkAuth,          // Check if session is valid
+  getCurrentCompany,  // Fetch current company (auto-refreshes if needed)
+  refresh,            // Manually refresh the session
+  logout,             // Logout and destroy session
+  initiateOAuth,      // Start OAuth flow
+  isCompanyConnected, // Check if company has access token
 } = useGenuka();
-
-// Get all companies
-const companies = await getCompanies();
-
-// Get specific company
-const company = await getCompany('company_123');
-
-// Check if company is connected
-const connected = await isCompanyConnected('company_123');
-
-// Initiate OAuth flow
-initiateOAuth('company_123', '/dashboard');
 ```
 
-### Example Page
+### Example: Auth-Aware Component
 
 ```vue
 <template>
   <div>
-    <h1>Companies</h1>
-    <ul v-if="companies">
-      <li v-for="company in companies" :key="company.id">
-        {{ company.name }}
-        <span v-if="company.accessToken">✅ Connected</span>
-        <button v-else @click="connect(company.id)">Connect</button>
-      </li>
-    </ul>
+    <div v-if="isLoading">Loading...</div>
+
+    <div v-else-if="!isAuthenticated">
+      <p>Please install the app from Genuka</p>
+    </div>
+
+    <div v-else>
+      <h1>Welcome, {{ company?.name }}</h1>
+      <button @click="handleRefresh">Refresh Session</button>
+      <button @click="handleLogout">Logout</button>
+    </div>
+
+    <p v-if="error" class="error">{{ error }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
-const { getCompanies, initiateOAuth } = useGenuka();
-const companies = ref(await getCompanies());
+const {
+  company,
+  isAuthenticated,
+  isLoading,
+  error,
+  refresh,
+  logout,
+  getCurrentCompany,
+} = useGenuka();
 
-const connect = (companyId: string) => {
-  initiateOAuth(companyId);
+// Fetch company on mount
+onMounted(async () => {
+  await getCurrentCompany();
+});
+
+const handleRefresh = async () => {
+  const success = await refresh();
+  if (!success) {
+    console.log('Please reinstall the app');
+  }
+};
+
+const handleLogout = async () => {
+  await logout();
+};
+</script>
+```
+
+### Handling 401 Errors
+
+The `getCurrentCompany()` method automatically tries to refresh the session when it receives a 401. For custom API calls:
+
+```typescript
+const { refresh } = useGenuka();
+
+async function fetchData() {
+  try {
+    const data = await $fetch('/api/my-endpoint');
+    return data;
+  } catch (err: any) {
+    if (err.statusCode === 401) {
+      const refreshed = await refresh();
+      if (refreshed) {
+        // Retry the request
+        return await $fetch('/api/my-endpoint');
+      }
+    }
+    throw err;
+  }
+}
+```
+
+### Initiate OAuth Flow
+
+```vue
+<template>
+  <button @click="connectCompany">Connect to Genuka</button>
+</template>
+
+<script setup lang="ts">
+const { initiateOAuth } = useGenuka();
+
+const connectCompany = () => {
+  const companyId = 'company_123';
+  initiateOAuth(companyId, '/dashboard');
 };
 </script>
 ```
